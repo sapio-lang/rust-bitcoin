@@ -47,7 +47,29 @@ use schnorr::{TapTweak, TweakedPublicKey, UntweakedPublicKey};
 
 /// A Bitcoin script.
 #[derive(Clone, Default, PartialOrd, Ord, PartialEq, Eq, Hash)]
-pub struct Script(Box<[u8]>);
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct Script(
+    #[cfg_attr(feature = "schemars", schemars(schema_with = "schemas::script"))]
+    Box<[u8]>);
+
+#[cfg(feature = "schemars")]
+mod schemas {
+    use schemars::schema::{Schema, SchemaObject};
+    use schemars::{gen::SchemaGenerator, JsonSchema};
+    const HEX_REGEX: &'static str = "^([0-9a-fA-F]{2})*$";
+
+    /// schema for Signature
+    /// Max length 72*2, no min length. Must be hex, upper or lower.
+    pub fn script(gen: &mut SchemaGenerator) -> Schema {
+        let mut schema: SchemaObject = <String>::json_schema(gen).into();
+        schema.string = Some(Box::new(schemars::schema::StringValidation {
+            max_length: None,
+            min_length: None,
+            pattern: Some(HEX_REGEX.to_owned()),
+        }));
+        schema.into()
+    }
+}
 
 impl AsRef<[u8]> for Script {
     fn as_ref(&self) -> &[u8] {
@@ -1261,6 +1283,7 @@ mod test {
         assert_eq!(json, serde_json::Value::String("827651a0698faaa9a8a7a687".to_owned()));
         let des = serde_json::from_value(json).unwrap();
         assert_eq!(original, des);
+
     }
 
     #[test]

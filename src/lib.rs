@@ -95,6 +95,7 @@ pub extern crate base64;
 #[cfg(all(test, feature = "serde"))] extern crate serde_test;
 #[cfg(all(test, feature = "serde"))] extern crate bincode;
 #[cfg(all(test, feature = "unstable"))] extern crate test;
+#[cfg(feature = "schemars")] extern crate schemars;
 
 #[cfg(target_pointer_width = "16")]
 compile_error!("rust-bitcoin cannot be used on 16-bit architectures");

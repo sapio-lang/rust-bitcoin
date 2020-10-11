@@ -42,6 +42,9 @@ use consensus::encode::MAX_VEC_SIZE;
 use hash_types::{SigHash, Txid, Wtxid};
 use VarInt;
 
+#[cfg(feature = "schemars")] use schemars::schema::{Schema, SchemaObject};
+#[cfg(feature = "schemars")] use schemars::{gen::SchemaGenerator, JsonSchema};
+
 /// A reference to a transaction output
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
 pub struct OutPoint {
@@ -50,7 +53,25 @@ pub struct OutPoint {
     /// The index of the referenced output in its transaction's vout
     pub vout: u32,
 }
+
 serde_struct_human_string_impl!(OutPoint, "an OutPoint", txid, vout);
+
+#[cfg(feature = "schemars")]
+impl JsonSchema for OutPoint {
+    fn schema_name() -> String {
+        "OutPoint".into()
+    }
+    fn json_schema(gen: &mut SchemaGenerator) -> Schema {
+        let mut schema: SchemaObject = <String>::json_schema(gen).into();
+        const PAT: &'static str = "^([0-9a-fA-F]{2})*:[0-9]{1,10}$";
+        schema.string = Some(Box::new(schemars::schema::StringValidation {
+            max_length: Some(75), // 10 digits index
+            min_length: Some(66), // index = 0
+            pattern: Some(PAT.to_owned()),
+        }));
+        schema.into()
+    }
+}
 
 impl OutPoint {
     /// Create a new [OutPoint].
@@ -179,9 +200,13 @@ impl ::core::str::FromStr for OutPoint {
     }
 }
 
+
+
+
 /// A transaction input, which defines old coins to be consumed
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct TxIn {
     /// The reference to the previous output that is being used an an input
     pub previous_output: OutPoint,
@@ -215,6 +240,7 @@ impl Default for TxIn {
 /// A transaction output, which defines new coins to be created from old ones.
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct TxOut {
     /// The value of the output, in satoshis
     pub value: u64,
@@ -261,6 +287,7 @@ impl Default for TxOut {
 /// for 0-input transactions, which results in unambiguously parseable transactions.
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct Transaction {
     /// The protocol version, is currently expected to be 1 or 2 (BIP 68).
     pub version: i32,
@@ -1083,6 +1110,7 @@ mod tests {
         let tx_bytes = Vec::from_hex("0100000001a15d57094aa7a21a28cb20b59aab8fc7d1149a3bdbcddba9c622e4f5f6a99ece010000006c493046022100f93bb0e7d8db7bd46e40132d1f8242026e045f03a0efe71bbb8e3f475e970d790221009337cd7f1f929f00cc6ff01f03729b069a7c21b59b1736ddfee5db5946c5da8c0121033b9b137ee87d5a812d6f506efdd37f0affa7ffc310711c06c7f3e097c9447c52ffffffff0100e1f505000000001976a9140389035a9225b3839e2bbf32d826a1e222031fd888ac00000000").unwrap();
         let tx: Transaction = deserialize(&tx_bytes).unwrap();
         serde_round_trip!(tx);
+
     }
 
     fn run_test_sighash(tx: &str, script: &str, input_index: usize, hash_type: i32, expected_result: &str) {
@@ -1511,6 +1539,64 @@ mod tests {
             script::Error::BitcoinConsensus(_) => {},
             _ => panic!("Wrong error type"),
         }
+    }
+
+    #[cfg(all(feature = "schemars", feature = "serde"))]
+    #[test]
+    fn schema_correct_outpoint() {
+        let o = crate::OutPoint::null();
+
+        let js = serde_json::from_str(&serde_json::to_string(&o).unwrap()).unwrap();
+        let s = schemars::schema_for!(crate::OutPoint);
+
+        let string_schema = serde_json::to_string(&s).unwrap();
+        println!("{}", string_schema);
+        let schema = serde_json::from_str(&string_schema).unwrap();
+        assert!(jsonschema_valid::is_valid(&js, &schema, None, true));
+    }
+
+    #[cfg(all(feature = "schemars", feature = "serde"))]
+    #[test]
+    fn schema_correct_txin() {
+        let o = crate::TxIn::default();
+
+        let js = serde_json::from_str(&serde_json::to_string(&o).unwrap()).unwrap();
+        let s = schemars::schema_for!(crate::TxIn);
+
+        let string_schema = serde_json::to_string(&s).unwrap();
+        let schema = serde_json::from_str(&string_schema).unwrap();
+        assert!(jsonschema_valid::is_valid(&js, &schema, None, true));
+    }
+
+    #[cfg(all(feature = "schemars", feature = "serde"))]
+    #[test]
+    fn schema_correct_txout() {
+        let o = crate::TxOut::default();
+
+        let js = serde_json::from_str(&serde_json::to_string(&o).unwrap()).unwrap();
+        let s = schemars::schema_for!(crate::TxOut);
+
+        let string_schema = serde_json::to_string(&s).unwrap();
+        let schema = serde_json::from_str(&string_schema).unwrap();
+        assert!(jsonschema_valid::is_valid(&js, &schema, None, true));
+    }
+
+    #[cfg(all(feature = "schemars", feature = "serde"))]
+    #[test]
+    fn schema_correct_txn() {
+        let o = crate::Transaction{
+            version: 2,
+            lock_time: 0,
+            input: vec![crate::TxIn::default()],
+            output: vec![crate::TxOut::default(), crate::TxOut::default()],
+        };
+
+        let js = serde_json::from_str(&serde_json::to_string(&o).unwrap()).unwrap();
+        let s = schemars::schema_for!(crate::Transaction);
+
+        let string_schema = serde_json::to_string(&s).unwrap();
+        let schema = serde_json::from_str(&string_schema).unwrap();
+        assert!(jsonschema_valid::is_valid(&js, &schema, None, true));
     }
 }
 
