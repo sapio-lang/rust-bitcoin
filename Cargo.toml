@@ -12,6 +12,9 @@ readme = "README.md"
 exclude = ["./test_data"]
 
 # Please don't forget to add relevant features to docs.rs below
+[patch.crates-io]
+secp256k1 = {git="https://github.com/sapio-lang/rust-secp256k1.git", branch="sapio-lang"}
+
 [features]
 default = [ "std", "secp-recovery" ]
 base64 = [ "base64-compat" ]
@@ -20,7 +23,8 @@ rand = ["secp256k1/rand-std"]
 use-serde = ["serde", "bitcoin_hashes/serde", "secp256k1/serde"]
 secp-lowmemory = ["secp256k1/lowmemory"]
 secp-recovery = ["secp256k1/recovery"]
-use-schemars = ["bitcoin_hashes/schemars", "schemars"]
+use-schemars = ["bitcoin_hashes/schemars", "schemars", "secp256k1/schemars"]
+
 
 # At least one of std, no-std must be enabled.
 #
