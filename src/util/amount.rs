@@ -18,6 +18,7 @@ use prelude::*;
 
 use core::{ops, default, str::FromStr, cmp::Ordering};
 use core::fmt::{self, Write};
+use core::convert::TryFrom;
 
 /// A set of denominations in which amounts can be expressed.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
@@ -1373,9 +1374,10 @@ const _: () = {
     }
 };
 
-impl From<CoinAmount> for  Result<Amount, ParseAmountError> {
-    fn from(c: CoinAmount) -> Result<Amount, ParseAmountError> {
-        match c {
+impl TryFrom<CoinAmount> for  Amount {
+    type Error = ParseAmountError;
+    fn try_from(value: CoinAmount) -> Result<Self, Self::Error> {
+        match value {
             CoinAmount::Sats(x) => Ok(Amount::from_sat(x)),
             CoinAmount::Btc(y) => Amount::from_btc(y),
         }
