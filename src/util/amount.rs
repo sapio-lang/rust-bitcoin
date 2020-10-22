@@ -1213,13 +1213,15 @@ pub mod serde {
     }
 }
 
-/// Type for dealing with unknown amounts
+/// An amount of Bitcoin in either Satoshis (sats) or Bitcoin (btc).
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Clone, Copy, PartialEq, PartialOrd, Debug)]
 pub enum CoinAmount {
-    /// Sats type
+    /// # Satoshis
+    /// Satoshis (sats) as an exact integer.
     Sats(u64),
-    /// Btc type
+    /// # Bitcoin
+    /// Bitcoin (btc) as a floating point.
     Btc(f64),
 }
 
