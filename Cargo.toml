@@ -14,7 +14,6 @@ exclude = ["./test_data"]
 # Please don't forget to add relevant features to docs.rs below
 [patch.crates-io]
 secp256k1 = {git="https://github.com/sapio-lang/rust-secp256k1.git", branch="sapio-lang"}
-
 [features]
 default = [ "std", "secp-recovery" ]
 base64 = [ "base64-compat" ]

@@ -1230,10 +1230,12 @@ pub enum CoinAmount {
 #[doc(hidden)]
 #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
 const _: () = {
+    use std::marker::PhantomData;
+    use std::fmt::Formatter;
     #[allow(rust_2018_idioms, clippy::useless_attribute)]
     extern crate serde as _serde;
     impl _serde::Serialize for CoinAmount {
-        fn serialize<__S>(&self, __serializer: __S) -> _serde::export::Result<__S::Ok, __S::Error>
+        fn serialize<__S>(&self, __serializer: __S) -> Result<__S::Ok, __S::Error>
         where
             __S: _serde::Serializer,
         {
@@ -1256,7 +1258,7 @@ const _: () = {
         }
     }
     impl<'de> _serde::Deserialize<'de> for CoinAmount {
-        fn deserialize<__D>(__deserializer: __D) -> _serde::export::Result<Self, __D::Error>
+        fn deserialize<__D>(__deserializer: __D) -> Result<Self, __D::Error>
         where
             __D: _serde::Deserializer<'de>,
         {
@@ -1270,31 +1272,31 @@ const _: () = {
                 type Value = __Field;
                 fn expecting(
                     &self,
-                    __formatter: &mut _serde::export::Formatter,
-                ) -> _serde::export::fmt::Result {
-                    _serde::export::Formatter::write_str(__formatter, "variant identifier")
+                    __formatter: &mut Formatter,
+                ) -> fmt::Result {
+                    Formatter::write_str(__formatter, "variant identifier")
                 }
-                fn visit_u64<__E>(self, __value: u64) -> _serde::export::Result<Self::Value, __E>
+                fn visit_u64<__E>(self, __value: u64) -> Result<Self::Value, __E>
                 where
                     __E: _serde::de::Error,
                 {
                     match __value {
-                        0u64 => _serde::export::Ok(__Field::__field0),
-                        1u64 => _serde::export::Ok(__Field::__field1),
-                        _ => _serde::export::Err(_serde::de::Error::invalid_value(
+                        0u64 => Ok(__Field::__field0),
+                        1u64 => Ok(__Field::__field1),
+                        _ => Err(_serde::de::Error::invalid_value(
                             _serde::de::Unexpected::Unsigned(__value),
                             &"variant index 0 <= i < 2",
                         )),
                     }
                 }
-                fn visit_str<__E>(self, __value: &str) -> _serde::export::Result<Self::Value, __E>
+                fn visit_str<__E>(self, __value: &str) -> Result<Self::Value, __E>
                 where
                     __E: _serde::de::Error,
                 {
                     match __value {
-                        "Sats" => _serde::export::Ok(__Field::__field0),
-                        "Btc" => _serde::export::Ok(__Field::__field1),
-                        _ => _serde::export::Err(_serde::de::Error::unknown_variant(
+                        "Sats" => Ok(__Field::__field0),
+                        "Btc" => Ok(__Field::__field1),
+                        _ => Err(_serde::de::Error::unknown_variant(
                             __value, VARIANTS,
                         )),
                     }
@@ -1302,16 +1304,16 @@ const _: () = {
                 fn visit_bytes<__E>(
                     self,
                     __value: &[u8],
-                ) -> _serde::export::Result<Self::Value, __E>
+                ) -> Result<Self::Value, __E>
                 where
                     __E: _serde::de::Error,
                 {
                     match __value {
-                        b"Sats" => _serde::export::Ok(__Field::__field0),
-                        b"Btc" => _serde::export::Ok(__Field::__field1),
+                        b"Sats" => Ok(__Field::__field0),
+                        b"Btc" => Ok(__Field::__field1),
                         _ => {
-                            let __value = &_serde::export::from_utf8_lossy(__value);
-                            _serde::export::Err(_serde::de::Error::unknown_variant(
+                            let __value = &String::from_utf8_lossy(__value);
+                            Err(_serde::de::Error::unknown_variant(
                                 __value, VARIANTS,
                             ))
                         }
@@ -1320,7 +1322,7 @@ const _: () = {
             }
             impl<'de> _serde::Deserialize<'de> for __Field {
                 #[inline]
-                fn deserialize<__D>(__deserializer: __D) -> _serde::export::Result<Self, __D::Error>
+                fn deserialize<__D>(__deserializer: __D) -> Result<Self, __D::Error>
                 where
                     __D: _serde::Deserializer<'de>,
                 {
@@ -1328,35 +1330,35 @@ const _: () = {
                 }
             }
             struct __Visitor<'de> {
-                marker: _serde::export::PhantomData<CoinAmount>,
-                lifetime: _serde::export::PhantomData<&'de ()>,
+                marker: PhantomData<CoinAmount>,
+                lifetime: PhantomData<&'de ()>,
             }
             impl<'de> _serde::de::Visitor<'de> for __Visitor<'de> {
                 type Value = CoinAmount;
                 fn expecting(
                     &self,
-                    __formatter: &mut _serde::export::Formatter,
-                ) -> _serde::export::fmt::Result {
-                    _serde::export::Formatter::write_str(__formatter, "enum CoinAmount")
+                    __formatter: &mut Formatter,
+                ) -> fmt::Result {
+                    Formatter::write_str(__formatter, "enum CoinAmount")
                 }
                 fn visit_enum<__A>(
                     self,
                     __data: __A,
-                ) -> _serde::export::Result<Self::Value, __A::Error>
+                ) -> Result<Self::Value, __A::Error>
                 where
                     __A: _serde::de::EnumAccess<'de>,
                 {
                     match match _serde::de::EnumAccess::variant(__data) {
-                        _serde::export::Ok(__val) => __val,
-                        _serde::export::Err(__err) => {
-                            return _serde::export::Err(__err);
+                        Ok(__val) => __val,
+                        Err(__err) => {
+                            return Err(__err);
                         }
                     } {
-                        (__Field::__field0, __variant) => _serde::export::Result::map(
+                        (__Field::__field0, __variant) => Result::map(
                             _serde::de::VariantAccess::newtype_variant::<u64>(__variant),
                             CoinAmount::Sats,
                         ),
-                        (__Field::__field1, __variant) => _serde::export::Result::map(
+                        (__Field::__field1, __variant) => Result::map(
                             _serde::de::VariantAccess::newtype_variant::<f64>(__variant),
                             CoinAmount::Btc,
                         ),
@@ -1369,8 +1371,8 @@ const _: () = {
                 "CoinAmount",
                 VARIANTS,
                 __Visitor {
-                    marker: _serde::export::PhantomData::<CoinAmount>,
-                    lifetime: _serde::export::PhantomData,
+                    marker: PhantomData::<CoinAmount>,
+                    lifetime: PhantomData,
                 },
             )
         }
