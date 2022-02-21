@@ -1950,6 +1950,7 @@ mod tests {
                 Err(e) => panic!("unexpected error: {}", e),
             }
         }
+    }
 
     #[cfg(all(feature = "serde", feature = "schemars"))]
     #[test]
