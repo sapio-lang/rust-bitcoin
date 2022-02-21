@@ -1,4 +1,4 @@
-extern crate bitcoin;
+extern crate sapio_bitcoin as bitcoin;
 
 use std::{env, process};
 use std::str::FromStr;
