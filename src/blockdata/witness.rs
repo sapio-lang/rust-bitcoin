@@ -12,6 +12,11 @@ use VarInt;
 #[cfg(feature = "serde")]
 use serde;
 
+#[cfg(feature = "schemars")]
+use schemars::schema::{Schema};
+#[cfg(feature = "schemars")]
+use schemars::{gen::SchemaGenerator, JsonSchema};
+
 /// The Witness is the data used to unlock bitcoins since the [segwit upgrade](https://github.com/bitcoin/bips/blob/master/bip-0143.mediawiki)
 ///
 /// Can be logically seen as an array of byte-arrays `Vec<Vec<u8>>` and indeed you can convert from
@@ -284,6 +289,16 @@ impl<'de> serde::Deserialize<'de> for Witness {
     {
         let vec: Vec<Vec<u8>> = serde::Deserialize::deserialize(deserializer)?;
         Ok(Witness::from_vec(vec))
+    }
+}
+
+#[cfg(feature = "schemars")]
+impl JsonSchema for Witness {
+    fn schema_name() -> String {
+        "Witness".into()
+    }
+    fn json_schema(gen: &mut SchemaGenerator) -> Schema {
+        Vec::<Vec<u8>>::json_schema(gen).into()
     }
 }
 
