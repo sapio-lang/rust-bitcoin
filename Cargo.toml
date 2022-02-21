@@ -12,8 +12,6 @@ readme = "README.md"
 exclude = ["./test_data"]
 
 # Please don't forget to add relevant features to docs.rs below
-[patch.crates-io]
-secp256k1 = {git="https://github.com/sapio-lang/rust-secp256k1.git", branch="sapio-lang"}
 [features]
 default = [ "std", "secp-recovery" ]
 base64 = [ "base64-compat" ]
@@ -40,7 +38,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 [dependencies]
 bech32 = { version = "0.8.1", default-features = false }
 bitcoin_hashes = { version = "0.10.0", default-features = false }
-secp256k1 = { version = "0.21.2", default-features = false, package= "sapio-secp256k1" }
+secp256k1 = { version = "^0.21.2", default-features = false, package= "sapio-secp256k1" }
 core2 = { version = "0.3.0", optional = true, default-features = false }
 base64-compat = { version = "1.0.0", optional = true }
 bitcoinconsensus = { version = "0.19.0-3", optional = true }
@@ -55,7 +53,7 @@ optional = true
 serde_derive = "<1.0.99, >= 1.0.0"
 serde_json = "<1.0.45, >= 1.0.0"
 serde_test = "1"
-secp256k1 = { version = "0.21.2", features = [ "recovery", "rand-std" ], package= "sapio-secp256k1" }
+secp256k1 = { version = "^0.21.2", features = [ "recovery", "rand-std" ], package= "sapio-secp256k1" }
 bincode = "1.3.1"
 jsonschema-valid = "0.2.0"
 # We need to pin ryu (transitive dep from serde_json) to stay compatible with Rust 1.22.0
