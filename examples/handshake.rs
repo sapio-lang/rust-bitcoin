@@ -1,4 +1,4 @@
-extern crate bitcoin;
+extern crate sapio_bitcoin as bitcoin;
 
 use std::net::{IpAddr, Ipv4Addr, Shutdown, SocketAddr, TcpStream};
 use std::time::{SystemTime, UNIX_EPOCH};
