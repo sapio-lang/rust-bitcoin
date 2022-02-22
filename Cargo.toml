@@ -1,6 +1,6 @@
 [package]
 name = "sapio-bitcoin"
-version = "0.28.0-rc.2"
+version = "0.28.0-rc.3"
 
 authors = ["Jeremy Rubin <jeremy.l.rubin@gmail.com>", "Andrew Poelstra <apoelstra@wpsoftware.net>"]
 license = "CC0-1.0"
