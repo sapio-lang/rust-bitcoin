@@ -1,6 +1,6 @@
 [package]
 name = "sapio-bitcoin"
-version = "0.28.0"
+version = "0.28.1"
 
 authors = ["Jeremy Rubin <jeremy.l.rubin@gmail.com>", "Andrew Poelstra <apoelstra@wpsoftware.net>"]
 license = "CC0-1.0"
@@ -54,7 +54,7 @@ optional = true
 serde_derive = "<1.0.99, >= 1.0.0"
 serde_json = "<1.0.45, >= 1.0.0"
 serde_test = "1"
-secp256k1 = { version = "^0.21.2", features = [ "recovery", "rand-std" ], package= "sapio-secp256k1" }
+secp256k1 = { version = "^0.22.0", features = [ "recovery", "rand-std" ], package= "sapio-secp256k1" }
 bincode = "1.3.1"
 jsonschema-valid = "0.2.0"
 # We need to pin ryu (transitive dep from serde_json) to stay compatible with Rust 1.22.0

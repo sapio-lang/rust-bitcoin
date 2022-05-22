@@ -141,7 +141,7 @@ impl TapTweak for UntweakedKeyPair {
     /// The tweaked key and its parity.
     fn tap_tweak<C: Verification>(mut self, secp: &Secp256k1<C>, merkle_root: Option<TapBranchHash>) -> TweakedKeyPair {
         let pubkey = ::XOnlyPublicKey::from_keypair(&self);
-        let tweak_value = TapTweakHash::from_key_and_tweak(pubkey, merkle_root).into_inner();
+        let tweak_value = TapTweakHash::from_key_and_tweak(pubkey.0, merkle_root).into_inner();
         self.tweak_add_assign(&secp, &tweak_value).expect("Tap tweak failed");
         TweakedKeyPair(self)
     }
