@@ -1103,11 +1103,11 @@ mod tests {
             };
 
             // tests
-            let keypair = secp256k1::KeyPair::from_secret_key(&secp, internal_priv_key);
+            let keypair = secp256k1::Keypair::from_secret_key(&secp, &internal_priv_key);
             let internal_key = XOnlyPublicKey::from_keypair(&keypair);
-            let tweak = TapTweakHash::from_key_and_tweak(internal_key, merkle_root);
+            let tweak = TapTweakHash::from_key_and_tweak(internal_key.0, merkle_root);
             let mut tweaked_keypair = keypair;
-            tweaked_keypair.tweak_add_assign(&secp, &tweak).unwrap();
+            tweaked_keypair = tweaked_keypair.add_xonly_tweak(&secp, &tweak.to_scalar()).unwrap();
             let mut sig_msg = Vec::new();
             cache.taproot_encode_signing_data_to(
                 &mut sig_msg,
@@ -1128,7 +1128,7 @@ mod tests {
             let msg = secp256k1::Message::from_slice(&sighash).unwrap();
             let key_spend_sig = secp.sign_schnorr_with_aux_rand(&msg, &tweaked_keypair, &[0u8; 32]);
 
-            assert_eq!(expected_internal_pk, internal_key);
+            assert_eq!(expected_internal_pk, internal_key.0);
             assert_eq!(expected_tweak, tweak);
             assert_eq!(expected_sig_msg, sig_msg);
             assert_eq!(expected_sighash, sighash);

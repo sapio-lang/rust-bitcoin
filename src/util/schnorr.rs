@@ -20,10 +20,9 @@
 use core::fmt;
 use prelude::*;
 
-use secp256k1::{XOnlyPublicKey as _XOnlyPublicKey, KeyPair as _KeyPair};
+use secp256k1::{XOnlyPublicKey as _XOnlyPublicKey, Keypair as _KeyPair};
 
 use secp256k1::{self, Secp256k1, Verification, constants};
-use hashes::Hash;
 use util::taproot::{TapBranchHash, TapTweakHash};
 use SchnorrSighashType;
 
@@ -110,9 +109,9 @@ impl TapTweak for UntweakedPublicKey {
     /// # Returns
     /// The tweaked key and its parity.
     fn tap_tweak<C: Verification>(self, secp: &Secp256k1<C>, merkle_root: Option<TapBranchHash>) -> (TweakedPublicKey, secp256k1::Parity) {
-        let tweak_value = TapTweakHash::from_key_and_tweak(self, merkle_root).into_inner();
-        let mut output_key = self.clone();
-        let parity = output_key.tweak_add_assign(&secp, &tweak_value).expect("Tap tweak failed");
+        let tweak_value = TapTweakHash::from_key_and_tweak(self, merkle_root).to_scalar();
+        let output_key = self.clone();
+        let (output_key, parity) = output_key.add_tweak(&secp, &tweak_value).expect("Tap tweak failed");
 
         debug_assert!(self.tweak_add_check(&secp, &output_key, parity, tweak_value));
         (TweakedPublicKey(output_key), parity)
@@ -141,8 +140,8 @@ impl TapTweak for UntweakedKeyPair {
     /// The tweaked key and its parity.
     fn tap_tweak<C: Verification>(mut self, secp: &Secp256k1<C>, merkle_root: Option<TapBranchHash>) -> TweakedKeyPair {
         let pubkey = ::XOnlyPublicKey::from_keypair(&self);
-        let tweak_value = TapTweakHash::from_key_and_tweak(pubkey.0, merkle_root).into_inner();
-        self.tweak_add_assign(&secp, &tweak_value).expect("Tap tweak failed");
+        let tweak_value = TapTweakHash::from_key_and_tweak(pubkey.0, merkle_root).to_scalar();
+        self = self.add_xonly_tweak(&secp, &tweak_value).expect("Tap tweak failed");
         TweakedKeyPair(self)
     }
 

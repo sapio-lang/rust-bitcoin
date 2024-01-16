@@ -27,7 +27,7 @@ use core::ops::Index;
 
 use hash_types::XpubIdentifier;
 use hashes::{sha512, Hash, HashEngine, Hmac, HmacEngine, hex};
-use secp256k1::{self, Secp256k1, XOnlyPublicKey};
+use secp256k1::{self, Secp256k1, XOnlyPublicKey, Scalar};
 
 use network::constants::Network;
 use util::{base58, endian, key};
@@ -593,7 +593,7 @@ impl ExtendedPrivKey {
         hmac_engine.input(&endian::u32_to_array_be(u32::from(i)));
         let hmac_result: Hmac<sha512::Hash> = Hmac::from_engine(hmac_engine);
         let mut sk = secp256k1::SecretKey::from_slice(&hmac_result[..32])?;
-        sk.add_assign(&self.private_key[..])?;
+        sk = sk.add_tweak(&Scalar::from(self.private_key))?;
 
         Ok(ExtendedPrivKey {
             network: self.network,
@@ -734,7 +734,7 @@ impl ExtendedPubKey {
     ) -> Result<ExtendedPubKey, Error> {
         let (sk, chain_code) = self.ckd_pub_tweak(i)?;
         let mut pk = self.public_key;
-        pk.add_exp_assign(secp, &sk[..])?;
+        pk = pk.add_exp_tweak(secp, &Scalar::from(sk))?;
 
         Ok(ExtendedPubKey {
             network: self.network,

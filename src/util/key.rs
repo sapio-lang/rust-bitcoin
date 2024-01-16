@@ -16,7 +16,7 @@
 //! This module provides keys used in Bitcoin that can be roundtrip
 //! (de)serialized.
 
-pub use secp256k1::{XOnlyPublicKey, KeyPair};
+pub use secp256k1::{XOnlyPublicKey, Keypair as KeyPair};
 
 use prelude::*;
 
