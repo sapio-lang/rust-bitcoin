@@ -316,7 +316,7 @@ impl SchnorrSighashType {
         }
     }
 
-    /// Create a [`SchnorrSighashType`] from raw `u8`
+    /// Create a [`SchnorrSighashType`] from a BIP341-defined raw `u8`.
     pub fn from_u8(hash_ty: u8) -> Result<Self, Error> {
         match hash_ty {
             0x00 => Ok(SchnorrSighashType::Default),
@@ -326,7 +326,6 @@ impl SchnorrSighashType {
             0x81 => Ok(SchnorrSighashType::AllPlusAnyoneCanPay),
             0x82 => Ok(SchnorrSighashType::NonePlusAnyoneCanPay),
             0x83 => Ok(SchnorrSighashType::SinglePlusAnyoneCanPay),
-            0xFF => Ok(SchnorrSighashType::Reserved),
             x => Err(Error::InvalidSighashType(x as u32)),
         }
     }
@@ -357,6 +356,11 @@ impl<R: Deref<Target=Transaction>> SighashCache<R> {
         leaf_hash_code_separator: Option<(TapLeafHash, u32)>,
         sighash_type: SchnorrSighashType,
     ) -> Result<(), Error> {
+        // Reserved is publicly constructible, but is not a BIP341 hash type.
+        // Reject it before writing a partial message or populating hash caches.
+        if sighash_type == SchnorrSighashType::Reserved {
+            return Err(Error::InvalidSighashType(sighash_type as u32));
+        }
         prevouts.check_all(&self.tx)?;
 
         let (sighash, anyone_can_pay) = sighash_type.split_anyonecanpay_flag();
@@ -986,6 +990,67 @@ mod tests {
                 inputs_size: 1
             })
         );
+    }
+
+    #[test]
+    fn schnorr_sighash_bytes_are_consensus_defined() {
+        for flag in 0..256 {
+            match flag {
+                0x00 | 0x01 | 0x02 | 0x03 | 0x81 | 0x82 | 0x83 => {
+                    assert_eq!(SchnorrSighashType::from_u8(flag as u8).unwrap() as u8, flag as u8);
+                }
+                _ => assert_eq!(
+                    SchnorrSighashType::from_u8(flag as u8),
+                    Err(Error::InvalidSighashType(flag))
+                ),
+            }
+        }
+    }
+
+    #[test]
+    fn reserved_schnorr_sighash_does_not_write_or_hash() {
+        let tx = Transaction {
+            version: 2,
+            lock_time: 0,
+            input: vec![TxIn::default()],
+            output: vec![TxOut::default()],
+        };
+        let utxos = vec![TxOut::default()];
+        let prevouts = Prevouts::All(&utxos);
+        let mut cache = SighashCache::new(&tx);
+        let mut message = vec![0xaa];
+        let script = Script::new();
+        let leaf = TapLeafHash::from_script(&script, LeafVersion::TapScript);
+        let annex = Annex::new(&[0x50]).unwrap();
+        let error = Error::InvalidSighashType(0xff);
+
+        assert_eq!(
+            cache.taproot_encode_signing_data_to(
+                &mut message, 0, &prevouts, Some(annex), Some((leaf, 0)),
+                SchnorrSighashType::Reserved
+            ),
+            Err(error)
+        );
+        assert_eq!(message, vec![0xaa]);
+        assert_eq!(
+            cache.taproot_signature_hash(
+                0, &prevouts, None, None, SchnorrSighashType::Reserved
+            ),
+            Err(error)
+        );
+        assert_eq!(
+            cache.taproot_key_spend_signature_hash(0, &prevouts, SchnorrSighashType::Reserved),
+            Err(error)
+        );
+        assert_eq!(
+            cache.taproot_script_spend_signature_hash(
+                0, &prevouts, leaf, SchnorrSighashType::Reserved
+            ),
+            Err(error)
+        );
+        assert!(cache.common_cache.is_none());
+        assert!(cache.taproot_cache.is_none());
+        assert!(cache.segwit_cache.is_none());
     }
 
     #[test]

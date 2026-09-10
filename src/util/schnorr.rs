@@ -223,7 +223,10 @@ pub struct SchnorrSig {
 }
 
 impl SchnorrSig {
-    /// Deserialize from slice
+    /// Deserialize a BIP341 signature with a canonical sighash encoding.
+    ///
+    /// DEFAULT must use the 64-byte form; an explicit sighash byte must be
+    /// one of 0x01, 0x02, 0x03, 0x81, 0x82 or 0x83.
     pub fn from_slice(sl: &[u8]) -> Result<Self, SchnorrSigError> {
         match sl.len() {
             64 => {
@@ -234,6 +237,9 @@ impl SchnorrSig {
             },
             65 => {
                 let (hash_ty, sig) = sl.split_last().expect("Slice len checked == 65");
+                if *hash_ty == 0 {
+                    return Err(SchnorrSigError::InvalidSighashType(*hash_ty));
+                }
                 let hash_ty = SchnorrSighashType::from_u8(*hash_ty)
                     .map_err(|_| SchnorrSigError::InvalidSighashType(*hash_ty))?;
                 let sig = secp256k1::schnorr::Signature::from_slice(sig)
@@ -293,5 +299,47 @@ impl From<secp256k1::Error> for SchnorrSigError {
 
     fn from(e: secp256k1::Error) -> SchnorrSigError {
         SchnorrSigError::Secp256k1(e)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn schnorr_signature_sighash_encodings() {
+        let secp = Secp256k1::new();
+        let secret = secp256k1::SecretKey::from_slice(&[1; 32]).unwrap();
+        let key = secp256k1::Keypair::from_secret_key(&secp, &secret);
+        let message = secp256k1::Message::from_digest_slice(&[2; 32]).unwrap();
+        let signature = secp.sign_schnorr_no_aux_rand(&message, &key);
+        let mut bytes = signature.as_ref().to_vec();
+        let default = SchnorrSig::from_slice(&bytes).unwrap();
+        assert_eq!(default.sig, signature);
+        assert_eq!(default.hash_ty, SchnorrSighashType::Default);
+        assert_eq!(default.to_vec(), bytes);
+
+        bytes.push(0);
+        for flag in 0..256 {
+            bytes[64] = flag as u8;
+            match flag {
+                0x01 | 0x02 | 0x03 | 0x81 | 0x82 | 0x83 => {
+                    let parsed = SchnorrSig::from_slice(&bytes).unwrap();
+                    assert_eq!(parsed.sig, signature);
+                    assert_eq!(parsed.hash_ty as u8, flag as u8);
+                    assert_eq!(parsed.to_vec(), bytes);
+                }
+                _ => assert_eq!(
+                    SchnorrSig::from_slice(&bytes),
+                    Err(SchnorrSigError::InvalidSighashType(flag as u8))
+                ),
+            }
+        }
+        for length in [0, 1, 63, 66, 128].iter().cloned() {
+            assert_eq!(
+                SchnorrSig::from_slice(&vec![0; length]),
+                Err(SchnorrSigError::InvalidSchnorrSigSize(length))
+            );
+        }
     }
 }

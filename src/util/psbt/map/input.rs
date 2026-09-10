@@ -588,7 +588,10 @@ mod test {
             assert_eq!(&s, schnorr_str);
             let back = PsbtSighashType::from_str(&s).unwrap();
             assert_eq!(back, sighash);
-            assert_eq!(back.schnorr_hash_ty().unwrap(), *schnorr);
+            assert_eq!(
+                back.schnorr_hash_ty(),
+                Err(sighash::Error::InvalidSighashType(0xff))
+            );
         }
     }
 
