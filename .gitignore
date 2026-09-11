@@ -1,10 +1,16 @@
-target
+# .gitignore for rust-bitcoin repository workspace.
+
+# Lock files
 Cargo.lock
+bitcoin/Cargo.lock
+hashes/Cargo.lock
 
-#fuzz
-fuzz/hfuzz_target
-fuzz/hfuzz_workspace
+# Build artifacts
+target/
 
-#IntelliJ project files
-.idea
-*.iml
+# Test artifacts
+bitcoin/dep_test
+
+# Fuzz artifacts
+hfuzz_target
+hfuzz_workspace

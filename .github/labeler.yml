@@ -1,0 +1,9 @@
+ci:
+  - changed-files:
+    - any-glob-to-any-file: .github/**
+test:
+  - changed-files:
+    - any-glob-to-any-file: '*/tests/**'
+doc:
+  - changed-files:
+    - any-glob-to-any-file: '**/*.md'

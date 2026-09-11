@@ -1,40 +1,16 @@
-[package]
-name = "bitcoin"
-version = "0.25.0"
-authors = ["Andrew Poelstra <apoelstra@wpsoftware.net>"]
-license = "CC0-1.0"
-homepage = "https://github.com/rust-bitcoin/rust-bitcoin/"
-repository = "https://github.com/rust-bitcoin/rust-bitcoin/"
-documentation = "https://docs.rs/bitcoin/"
-description = "General purpose library for using and interoperating with Bitcoin and other cryptocurrencies."
-keywords = [ "crypto", "bitcoin" ]
-readme = "README.md"
+[workspace]
+members = ["bitcoin", "hashes", "io", "units", "base58"]
+resolver = "2"
 
+[workspace.metadata.rbmt.toolchains]
+nightly = "nightly-2026-03-27"
+stable = "1.91.1"
 
-[features]
-default = [ "secp-recovery" ]
-base64 = [ "base64-compat" ]
-fuzztarget = ["secp256k1/fuzztarget", "bitcoin_hashes/fuzztarget"]
-unstable = []
-rand = ["secp256k1/rand-std"]
-use-serde = ["serde", "bitcoin_hashes/serde", "secp256k1/serde"]
-secp-endomorphism = ["secp256k1/endomorphism"]
-secp-lowmemory = ["secp256k1/lowmemory"]
-secp-recovery = ["secp256k1/recovery"]
-
-[dependencies]
-base64-compat = { version = "1.0.0", optional = true }
-bech32 = "0.7.2"
-bitcoin_hashes = "0.9.0"
-secp256k1 = { version = "0.19.0", features = [ "recovery" ] }
-
-bitcoinconsensus = { version = "0.19.0-1", optional = true }
-serde = { version = "1", optional = true }
-
-[dev-dependencies]
-serde_derive = "<1.0.99"
-serde_json = "<1.0.45"
-serde_test = "1"
-secp256k1 = { version = "0.19.0", features = [ "recovery", "rand-std" ] }
-# We need to pin ryu (transitive dep from serde_json) to stay compatible with Rust 1.22.0
-ryu = "<1.0.5"
+# Patch secp256k1's dependency on bitcoin_hashes to use our local workspace version.
+# secp256k1 is a dependency of this workspace, but it has a dependency on the
+# bitcoin_hashes package in this workspace. This circular path is iron'd out in
+# practice, but confuses cargo during development since it treats these as two
+# different versions of the bitcoin_hashes package. This patch ensure a single
+# version is set in the lockfile for tests.
+[patch.crates-io]
+bitcoin_hashes = { path = "hashes" }
