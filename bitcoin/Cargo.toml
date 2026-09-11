@@ -14,7 +14,7 @@ keywords = [ "crypto", "bitcoin" ]
 readme = "../README.md"
 edition = "2021"
 rust-version = "1.60.0"
-exclude = ["api", "tests", "contrib"]
+exclude = ["api", "contrib"]
 
 [features]
 default = [ "std", "secp-recovery" ]
