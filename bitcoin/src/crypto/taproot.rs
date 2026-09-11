@@ -39,6 +39,11 @@ impl Signature {
             }
             65 => {
                 let (sighash_type, signature) = sl.split_last().expect("Slice len checked == 65");
+                // BIP341 encodes SIGHASH_DEFAULT by omitting the final byte.
+                // Reject it here before PSBT parsing can normalize it away.
+                if *sighash_type == 0 {
+                    return Err(InvalidSighashTypeError(0).into());
+                }
                 let sighash_type = TapSighashType::from_consensus_u8(*sighash_type)?;
                 let signature = secp256k1::schnorr::Signature::from_slice(signature)?;
                 Ok(Signature { signature, sighash_type })
@@ -83,6 +88,37 @@ impl Signature {
             65
         };
         SerializedSignature::from_raw_parts(buf, len)
+    }
+}
+
+#[cfg(test)]
+mod canonical_signature_tests {
+    use super::*;
+
+    #[test]
+    fn default_is_implicit_and_every_explicit_flag_is_checked() {
+        let raw = [1; 64];
+        let implicit = Signature::from_slice(&raw).unwrap();
+        assert_eq!(implicit.sighash_type, TapSighashType::Default);
+        assert_eq!(implicit.serialize().as_ref(), raw);
+
+        let mut explicit = raw.to_vec();
+        explicit.push(0);
+        for flag in 0..=u8::MAX {
+            explicit[64] = flag;
+            let parsed = Signature::from_slice(&explicit);
+            if matches!(flag, 1 | 2 | 3 | 0x81 | 0x82 | 0x83) {
+                assert_eq!(parsed.unwrap().to_vec(), explicit);
+            } else {
+                assert!(matches!(parsed, Err(SigFromSliceError::SighashType(_))));
+            }
+        }
+        for length in [0, 1, 63, 66] {
+            assert!(matches!(
+                Signature::from_slice(&vec![1; length]),
+                Err(SigFromSliceError::InvalidSignatureSize(actual)) if actual == length
+            ));
+        }
     }
 }
 
