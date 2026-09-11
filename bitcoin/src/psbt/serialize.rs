@@ -75,9 +75,13 @@ impl Psbt {
         Ok(written_len)
     }
 
-    /// Deserialize a value from raw binary data.
+    /// Deserialize a value from raw binary data, consuming the entire slice.
     pub fn deserialize(mut bytes: &[u8]) -> Result<Self, Error> {
-        Self::deserialize_from_reader(&mut bytes)
+        let psbt = Self::deserialize_from_reader(&mut bytes)?;
+        if !bytes.is_empty() {
+            return Err(Error::PartialDataConsumption);
+        }
+        Ok(psbt)
     }
 
     /// Deserialize a value from raw binary data read from a `BufRead` object.
@@ -400,6 +404,30 @@ fn key_source_len(key_source: &KeySource) -> usize { 4 + 4 * (key_source.1).as_r
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn slice_decoder_rejects_trailing_bytes_and_reader_preserves_them() {
+        use crate::psbt::{Error, Psbt};
+        use crate::{absolute, transaction, Transaction, TxIn};
+
+        let psbt = Psbt::from_unsigned_tx(Transaction {
+            version: transaction::Version::TWO,
+            lock_time: absolute::LockTime::ZERO,
+            input: vec![TxIn::default()],
+            output: vec![],
+        })
+        .unwrap();
+        let encoded = psbt.serialize();
+        assert_eq!(Psbt::deserialize(&encoded).unwrap(), psbt);
+        for suffix in [vec![0], vec![0xff], encoded.clone()] {
+            let mut bytes = encoded.clone();
+            bytes.extend_from_slice(&suffix);
+            assert!(matches!(Psbt::deserialize(&bytes), Err(Error::PartialDataConsumption)));
+            let mut reader = bytes.as_slice();
+            assert_eq!(Psbt::deserialize_from_reader(&mut reader).unwrap(), psbt);
+            assert_eq!(reader, suffix);
+        }
+    }
+
     use super::*;
 
     // Composes tree matching a given depth map, filled with dumb script leafs,
